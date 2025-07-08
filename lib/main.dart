@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/router/app_router.dart';
-import 'core/database/app_database.dart';
-import 'shared/providers/providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize database
-  final database = AppDatabase();
+  // final database = AppDatabase();
   
   runApp(
-    ProviderScope(
+    const ProviderScope(
       overrides: [
-        databaseProvider.overrideWithValue(database),
+        // databaseProvider.overrideWithValue(database),
       ],
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
@@ -28,12 +25,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp.router(
+    return MaterialApp.router(
           title: 'Flutter Chat App',
           debugShowCheckedModeBanner: false,
           routerConfig: router,
@@ -42,7 +34,6 @@ class MyApp extends ConsumerWidget {
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
         );
-      },
-    );
+      
   }
 }

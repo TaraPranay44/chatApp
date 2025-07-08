@@ -1,52 +1,72 @@
-import 'package:chatapp/core/constants/url_constants.dart';
-import 'package:dio/dio.dart';
-import '../../../../core/error/exceptions.dart';
-import '../models/login_request.dart';
-import '../models/user_model.dart';
+import 'dart:developer';
+
+import 'package:chatapp/core/error/exception_handler.dart';
+import 'package:chatapp/core/error/exceptions.dart';
+import 'package:chatapp/core/network/api_client.dart';
+import 'package:chatapp/feature/auth/data/models/send_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/verify_otp_request.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<UserModel> login(LoginRequest request);
-  Future<void> logout();
+  /// Login a user with email and password
+  // Future<UserModel> login({required LoginRequest request});
+
+  /// Register a new user
+  // Future<UserModel> register({
+  //   required String name,
+  //   required String email,
+  //   required String password,
+  // });
+
+  Future<bool> sendOtp({required SendOtpRequest request});
+
+  Future<bool> verifyOtp({required VerifyOtpRequest request});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
-  final Dio dio;
-  
-  AuthRemoteDataSourceImpl(this.dio);
-  
+  final ApiClient _apiClient;
+
+  AuthRemoteDataSourceImpl(this._apiClient);
+
+
   @override
-  Future<UserModel> login(LoginRequest request) async {
+  Future<bool> sendOtp({required SendOtpRequest request}) async {
     try {
-      final response = await dio.post(
-        ApiEndpoints.login,
-        data: request.toJson(),
-      );
-      
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data['user']);
-      } else {
-        throw ServerException(
-          message: 'Login failed',
-          statusCode: response.statusCode,
-        );
-      }
-    } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['message'] ?? 'Network error',
-        statusCode: e.response?.statusCode,
-      );
+      // Simulate network delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Simulate a successful response
+      log("OTP sent successfully to ${request.email.isNotEmpty ? request.email : request.phone}");
+
+      return true;
+    } on AppException catch (e) {
+      ExceptionHandler().handleException(e);
+      return false;
     }
   }
-  
+
   @override
-  Future<void> logout() async {
+  Future<bool> verifyOtp({required VerifyOtpRequest request}) async {
     try {
-      await dio.post(ApiEndpoints.logout);
-    } on DioException catch (e) {
-      throw ServerException(
-        message: e.response?.data['message'] ?? 'Logout failed',
-        statusCode: e.response?.statusCode,
-      );
+      // Simulate network delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Simulate a successful response
+      log("OTP verified successfully for ${request.email!.isNotEmpty ? request.email : request.phone}");
+
+      return true;
+    } on AppException catch (e) {
+      ExceptionHandler().handleException(e);
+      return false;
     }
   }
 }
+
+// Provider
+final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return AuthRemoteDataSourceImpl(apiClient);
+});
+
+// ApiClient provider
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());

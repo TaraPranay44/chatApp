@@ -1,6 +1,5 @@
 // shared/widgets/loading_widget.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class LoadingWidget extends StatelessWidget {
   final String? message;
@@ -25,11 +24,11 @@ class LoadingWidget extends StatelessWidget {
             strokeWidth: 3,
           ),
           if (message != null) ...[
-            SizedBox(height: 16.h),
+            const SizedBox(height: 16),
             Text(
               message!,
               style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 16,
                 color: Colors.grey[600],
               ),
             ),

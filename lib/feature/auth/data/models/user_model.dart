@@ -1,31 +1,67 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/user_entity.dart';
+import 'package:chatapp/feature/auth/domain/entities/user_entity.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:equatable/equatable.dart';
 
-part 'user_model.freezed.dart';
 part 'user_model.g.dart';
 
-@freezed
-class UserModel with _$UserModel {
-  const factory UserModel({
-    required int id,
-    required String email,
-    required String name,
-    String? avatarUrl,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) = _UserModel;
+@JsonSerializable(fieldRename: FieldRename.snake)
+class UserModel extends Equatable {
+  final String id;
+  final String name;
+  final String email;
+  final String? profilePicture;
+  final String? phone;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
+  const UserModel({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.profilePicture,
+    this.phone,
+    this.createdAt,
+    this.updatedAt,
+  });
+  
+  @override
+  List<Object?> get props => [
+    id, 
+    name, 
+    email, 
+    profilePicture, 
+    phone, 
+    createdAt, 
+    updatedAt
+  ];
+
+  factory UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
+  
+  Map<String, dynamic> toJson() => _$UserModelToJson(this);
+      
+  // Factory constructor to convert UserEntity to UserModel
+  factory UserModel.fromEntity(UserEntity entity) {
+    return UserModel(
+      id: entity.id,
+      name: entity.name,
+      email: entity.email,
+      profilePicture: entity.profilePicture,
+      phone: entity.phone,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+    );
+  }
 }
 
+// Extension to convert UserModel to UserEntity
 extension UserModelX on UserModel {
   UserEntity toEntity() {
     return UserEntity(
       id: id,
-      email: email,
       name: name,
-      avatarUrl: avatarUrl,
+      email: email,
+      profilePicture: profilePicture,
+      phone: phone,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );

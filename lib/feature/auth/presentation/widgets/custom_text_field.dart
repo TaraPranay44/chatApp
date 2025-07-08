@@ -1,6 +1,5 @@
 // features/auth/presentation/widgets/custom_text_field.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomTextField extends StatefulWidget {
   final String label;
@@ -53,12 +52,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
         Text(
           widget.label,
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: Colors.grey[700],
           ),
         ),
-        SizedBox(height: 8.h),
+        const SizedBox(height: 8),
         TextFormField(
           controller: widget.controller,
           obscureText: _obscureText,
@@ -85,24 +84,24 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   )
                 : widget.suffixIcon,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.blue, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.red),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
             filled: true,
             fillColor: widget.enabled ? Colors.grey[50] : Colors.grey[200],
-            contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
