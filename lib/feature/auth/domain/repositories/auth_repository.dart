@@ -1,6 +1,6 @@
 import 'package:chatapp/core/error/failures.dart';
-import 'package:chatapp/feature/auth/data/models/send_otp_request.dart';
-import 'package:chatapp/feature/auth/data/models/verify_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/request_models/send_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:dartz/dartz.dart';
 
 abstract class AuthRepository {

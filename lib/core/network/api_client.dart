@@ -1,118 +1,513 @@
 import 'dart:async';
-
+import 'dart:io';
+import 'package:chatapp/core/constants/url_constants.dart';
+import 'package:chatapp/core/error/exception_handler.dart';
+import 'package:chatapp/core/error/exception_severity.dart';
 import 'package:chatapp/core/error/exceptions.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiClient {
   final Dio _dio;
 
+  // Constructor that creates and initializes Dio
   ApiClient() : _dio = Dio() {
-    _dio.options.baseUrl = 'https://api.openai.com/v1';
-    _dio.options.connectTimeout = const Duration(milliseconds: 30000);
-    _dio.options.receiveTimeout = const Duration(milliseconds: 30000);
-    _dio.options.headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    };
+    _initializeDio();
+  }
 
-    // Add interceptors for logging
-    _dio.interceptors.add(LogInterceptor(
-      request: true,
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: true,
-      responseBody: true,
-      error: true,
+  // Initialize Dio with configuration
+  void _initializeDio() {
+    _dio.options.baseUrl = ApiEndpoints.apiBaseUrl;
+    _dio.options.connectTimeout = ApiEndpoints.connectTimeout;
+    _dio.options.receiveTimeout = ApiEndpoints.receiveTimeout;
+    _dio.options.sendTimeout = ApiEndpoints.sendTimeout;
+    _dio.options.headers = Map.from(ApiEndpoints.defaultHeaders);
+
+    // Add interceptors
+    _addInterceptors();
+  }
+
+  // Add interceptors
+  void _addInterceptors() {
+    // Request interceptor
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        if (kDebugMode) {
+          print('REQUEST: ${options.method} ${options.path}');
+          print('Headers: ${options.headers}');
+          if (options.data != null) print('Data: ${options.data}');
+        }
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        if (kDebugMode) {
+          print(
+              'RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
+        }
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        if (kDebugMode) {
+          print(
+              'ERROR: ${error.response?.statusCode} ${error.requestOptions.path}');
+          print('Message: ${error.message}');
+        }
+        handler.next(error);
+      },
     ));
+
+    // Token refresh interceptor
+    _dio.interceptors.add(InterceptorsWrapper(
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          // Handle token refresh logic here
+          await _handleTokenRefresh();
+        }
+        handler.next(error);
+      },
+    ));
+
+    // Add logging interceptor only in debug mode
+    if (kDebugMode) {
+      _dio.interceptors.add(LogInterceptor(
+        request: true,
+        requestHeader: false, // Reduced logging to avoid clutter
+        requestBody: true,
+        responseHeader: false,
+        responseBody: true,
+        error: true,
+        logPrint: (object) => print(object),
+      ));
+    }
+  }
+
+  // Handle token refresh
+  Future<void> _handleTokenRefresh() async {
+    // Implement token refresh logic here
+    // This is a placeholder - implement based on your auth system
+    if (kDebugMode) {
+      print('Token refresh needed');
+    }
   }
 
   // GET request
-  Future<dynamic> get(String path,
-      {Map<String, dynamic>? queryParameters}) async {
+  Future<T> get<T>(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final response = await _dio.get(path, queryParameters: queryParameters);
-      return response.data;
+      final response = await _dio.get<T>(
+        endpoint,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      return response.data as T;
     } on DioException catch (e) {
-      _handleError(e);
+      throw _handleError(e);
     }
   }
 
   // POST request
-  Future<dynamic> post(String path, {dynamic data}) async {
-    try {
-      final response = await _dio.post(path, data: data);
-      return response.data;
-    } on DioException catch (e) {
-      _handleError(e);
+  // Future<T> post<T>(
+  //   String endpoint, {
+  //   dynamic data,
+  //   Map<String, dynamic>? queryParameters,
+  //   Options? options,
+  //   CancelToken? cancelToken,
+  // }) async {
+  //   try {
+  //     final response = await _dio.post<T>(
+  //       endpoint,
+  //       data: data,
+  //       queryParameters: queryParameters,
+  //       options: options,
+  //       cancelToken: cancelToken,
+  //     );
+  //     return response.data as T;
+  //   } on DioException catch (e) {
+  //     throw _handleError(e);
+  //   }
+  // }
+
+// POST request with better error handling
+  Future<T> post<T>(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _dio.post(
+      endpoint,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+    );
+
+    // Additional validation for successful responses
+    if (response.statusCode != null &&
+        response.statusCode! >= 200 &&
+        response.statusCode! < 300) {
+      return response.data as T;
+    } else {
+      // This shouldn't happen, but handle it just in case
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        message: 'Unexpected status code: ${response.statusCode}',
+      );
     }
   }
 
   // PUT request
-  Future<dynamic> put(String path, {dynamic data}) async {
+  Future<T> put<T>(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final response = await _dio.put(path, data: data);
-      return response.data;
+      final response = await _dio.put<T>(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      return response.data as T;
     } on DioException catch (e) {
-      _handleError(e);
+      throw _handleError(e);
+    }
+  }
+
+  // PATCH request
+  Future<T> patch<T>(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await _dio.patch<T>(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      return response.data as T;
+    } on DioException catch (e) {
+      throw _handleError(e);
     }
   }
 
   // DELETE request
-  Future<dynamic> delete(String path) async {
+  Future<T> delete<T>(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final response = await _dio.delete(path);
-      return response.data;
+      final response = await _dio.delete<T>(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      return response.data as T;
     } on DioException catch (e) {
-      _handleError(e);
+      throw _handleError(e);
     }
   }
 
-  // Handle Dio errors
-  void _handleError(DioException e) {
+  // Upload file
+  Future<T> uploadFile<T>(
+    String endpoint, {
+    required String filePath,
+    required String fileKey,
+    Map<String, dynamic>? additionalData,
+    ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final formData = FormData();
+
+      // Add file
+      formData.files.add(MapEntry(
+        fileKey,
+        await MultipartFile.fromFile(filePath),
+      ));
+
+      // Add additional data
+      if (additionalData != null) {
+        additionalData.forEach((key, value) {
+          formData.fields.add(MapEntry(key, value.toString()));
+        });
+      }
+
+      final response = await _dio.post<T>(
+        endpoint,
+        data: formData,
+        onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
+      );
+      return response.data as T;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Download file
+  Future<void> downloadFile(
+    String endpoint,
+    String savePath, {
+    ProgressCallback? onReceiveProgress,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      await _dio.download(
+        endpoint,
+        savePath,
+        onReceiveProgress: onReceiveProgress,
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Handle Dio errors with improved error handling
+// Handle Dio errors with improved error handling
+  Exception _handleError(DioException e) {
+    if (kDebugMode) {
+      print('DioException: ${e.type}, Message: ${e.message}');
+      print('Response: ${e.response?.data}');
+      print('Status Code: ${e.response?.statusCode}');
+      print('Request Options: ${e.requestOptions.uri}');
+    }
+
+    // CRITICAL: Check if response exists but exception occurred
+    if (e.response != null) {
+      final statusCode = e.response!.statusCode;
+      final responseData = e.response!.data;
+
+      // Handle success responses (2xx) that Dio is treating as errors
+      if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+        if (kDebugMode) {
+          print('SUCCESS: Got $statusCode response but Dio treated as error');
+          print('Response data: $responseData');
+        }
+
+        // Don't throw an exception for success responses
+        // Instead, you should handle this in your API service layer
+        // For now, return a special exception that indicates success
+        return SuccessfulResponseException(
+          message: 'Request completed successfully with status $statusCode',
+          statusCode: statusCode,
+          responseData: responseData,
+        );
+      }
+    }
+
+    // Handle different Dio exception types
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        throw TimeoutException();
+        return TimeoutException(
+          message: 'Request timeout. Please check your internet connection.',
+        );
+
       case DioExceptionType.badResponse:
-        switch (e.response?.statusCode) {
-          case 400:
-            throw BadRequestException(message: e.response?.data['message']);
-          case 401:
-            throw UnauthorizedException(message: e.response?.data['message']);
-          case 403:
-            throw ForbiddenException(message: e.response?.data['message']);
-          case 404:
-            throw NotFoundException(message: e.response?.data['message']);
-          case 500:
-          case 501:
-          case 502:
-          case 503:
-            throw ServerException(message: e.response?.data['message']);
-          default:
-            throw ServerException(
-                message:
-                    e.response?.data['message'] ?? 'Unknown error occurred');
-        }
+        return _handleResponseError(e);
+
       case DioExceptionType.cancel:
-        throw RequestCancelledException();
-      case DioExceptionType.unknown:
-        if (e.error.toString().contains('SocketException')) {
-          throw NetworkException();
+        return RequestCancelledException(
+          message: 'Request was cancelled',
+        );
+
+      case DioExceptionType.connectionError:
+        if (e.error is SocketException) {
+          return NetworkException(
+            message: 'No internet connection. Please check your network.',
+          );
         }
-        throw ServerException(message: 'Unknown error occurred');
+        return NetworkException(
+          message: 'Connection error occurred',
+        );
+
+      case DioExceptionType.unknown:
+        // IMPORTANT: Handle unknown errors more carefully
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final responseData = e.response!.data;
+
+          if (kDebugMode) {
+            print('Unknown error with response:');
+            print('Status: $statusCode');
+            print('Data: $responseData');
+          }
+
+          // Check if it's actually a success response
+          if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+            return SuccessfulResponseException(
+              message: 'Request completed successfully with status $statusCode',
+              statusCode: statusCode,
+              responseData: responseData,
+            );
+          }
+
+          // Handle actual error responses
+          return ExceptionHandler.fromHttpStatusCode(
+            statusCode ?? 500,
+            message: 'Response parsing error: ${e.message}',
+            responseBody: responseData?.toString(),
+          );
+        }
+
+        // Handle socket exceptions in unknown errors
+        if (e.error is SocketException) {
+          return NetworkException(
+            message: 'No internet connection',
+          );
+        }
+
+        return ServerException(
+          message: 'An unknown error occurred: ${e.message ?? 'Unknown error'}',
+        );
+
       default:
-        throw ServerException(message: 'Unknown error occurred');
+        return ServerException(
+          message: 'An unexpected error occurred',
+        );
     }
   }
 
-  // Add token to headers
+  // Handle response errors
+  // Exception _handleResponseError(DioException e) {
+  //   final statusCode = e.response?.statusCode;
+  //   final responseData = e.response?.data;
+
+  //   // Try to extract error message from response
+  //   String errorMessage = 'An error occurred';
+  //   if (responseData is Map<String, dynamic>) {
+  //     errorMessage = responseData['message'] ??
+  //         responseData['error'] ??
+  //         responseData['detail'] ??
+  //         errorMessage;
+  //   }
+
+  //   switch (statusCode) {
+  //     case 400:
+  //       return BadRequestException(message: errorMessage);
+  //     case 401:
+  //       return UnauthorizedException(message: errorMessage);
+  //     case 403:
+  //       return ForbiddenException(message: errorMessage);
+  //     case 404:
+  //       return NotFoundException(message: errorMessage);
+  //     case 422:
+  //       return ValidationException(message: errorMessage);
+  //     case 429:
+  //       return RateLimitException(message: errorMessage);
+  //     case 500:
+  //     case 501:
+  //     case 502:
+  //     case 503:
+  //     case 504:
+  //       return ServerException(message: errorMessage);
+  //     default:
+  //       return ServerException(message: errorMessage);
+  //   }
+  // }
+
+  Exception _handleResponseError(DioException e) {
+    final statusCode = e.response?.statusCode;
+    final responseData = e.response?.data;
+
+    // Double-check for success responses even in badResponse case
+    if (statusCode != null && statusCode >= 200 && statusCode < 300) {
+      return SuccessfulResponseException(
+        message: 'Request completed successfully with status $statusCode',
+        statusCode: statusCode,
+        responseData: responseData,
+      );
+    }
+
+    // Use the ExceptionHandler for proper error mapping
+    return ExceptionHandler.fromHttpStatusCode(
+      statusCode ?? 500,
+      message: e.message,
+      responseBody: responseData?.toString(),
+    );
+  }
+
+  // Token management
   void setToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
-  // Remove token from headers
   void removeToken() {
     _dio.options.headers.remove('Authorization');
+  }
+
+  // Update headers
+  void updateHeaders(Map<String, String> headers) {
+    _dio.options.headers.addAll(headers);
+  }
+
+  // Get current headers
+  Map<String, dynamic> get headers => _dio.options.headers;
+
+  // Update base URL (useful for switching environments)
+  void updateBaseUrl(String baseUrl) {
+    _dio.options.baseUrl = baseUrl;
+  }
+
+  // Get current base URL
+  String get baseUrl => _dio.options.baseUrl;
+
+  // Cancel all requests
+  // void cancelAllRequests() {
+  //   _dio.();
+  // }
+
+  // Create a cancel token
+  CancelToken createCancelToken() => CancelToken();
+
+  // Close dio instance
+  void close() {
+    _dio.close();
+  }
+}
+
+class SuccessfulResponseException extends AppException {
+  final int statusCode;
+  final dynamic responseData;
+
+  SuccessfulResponseException({
+    required String message,
+    required this.statusCode,
+    this.responseData,
+  }) : super(
+          message: message,
+          userMessage: 'Request completed successfully',
+          errorCode: statusCode,
+          severity: ExceptionSeverity.low,
+        );
+
+  @override
+  String toString() {
+    return 'SuccessfulResponseException: $message (Status: $statusCode)';
   }
 }

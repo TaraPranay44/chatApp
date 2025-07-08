@@ -1,5 +1,5 @@
-import 'package:chatapp/feature/auth/data/models/send_otp_request.dart';
-import 'package:chatapp/feature/auth/data/models/verify_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/request_models/send_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:chatapp/feature/auth/domain/entities/user_entity.dart';
 import 'package:chatapp/feature/auth/domain/usecases/send_otp_usecase.dart';
 import 'package:chatapp/feature/auth/domain/usecases/verify_otp_usecase.dart';

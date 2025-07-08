@@ -1,5 +1,5 @@
 import 'package:chatapp/core/error/failures.dart';
-import 'package:chatapp/feature/auth/data/models/verify_otp_request.dart';
+import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:chatapp/feature/auth/data/repositories/auth_repository_impl.dart';
 import 'package:chatapp/feature/auth/domain/repositories/auth_repository.dart';
 import 'package:dartz/dartz.dart';

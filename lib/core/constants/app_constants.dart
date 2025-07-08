@@ -18,13 +18,14 @@ class AppConstants {
   static const Duration snackBarDuration = Duration(seconds: 3);
   
   // Text
-  static const String loginTitle = 'Enter your phone or email';
+  static const String loginTitle = 'Enter your phone and email';
   static const String emailHint = 'Email';
   static const String phoneHint = 'Mobile number';
   static const String otpHint = 'Enter OTP';
   static const String nextButton = 'Next';
   static const String useEmailButton = 'Use Email';
   static const String useMobileButton = 'Use Mobile';
+  static const String otpSentToBoth = 'OTP sent to your email and phone';
   
   // Error Messages
   static const String emptyEmailError = 'Please enter your email';

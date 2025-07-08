@@ -2,7 +2,7 @@
 import 'dart:convert';
 import '../../../../core/error/exceptions.dart';
 import '../../../../core/storage/secure_storage.dart';
-import '../models/user_model.dart';
+import '../models/request_models/user_model.dart';
 
 abstract class AuthLocalDataSource {
   Future<void> cacheUser(UserModel user);

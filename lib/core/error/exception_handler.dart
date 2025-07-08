@@ -105,6 +105,11 @@ class ExceptionHandler {
     }
   }
 
+  /// Check if status code is a success response (2xx)
+  static bool isSuccessStatusCode(int statusCode) {
+    return statusCode >= 200 && statusCode < 300;
+  }
+
   /// Create exception from HTTP status code
   static AppException fromHttpStatusCode(
     int statusCode, {
@@ -113,35 +118,61 @@ class ExceptionHandler {
     StackTrace? stackTrace,
     Map<String, dynamic>? context,
   }) {
+    // Handle success responses that are being treated as errors
+    if (isSuccessStatusCode(statusCode)) {
+      return UnknownException(
+        message: message ?? 'Success response treated as error: $statusCode',
+        userMessage: 'Request completed successfully',
+        stackTrace: stackTrace,
+        context: {
+          ...?context,
+          'statusCode': statusCode,
+          'note': 'Success response incorrectly treated as error',
+        },
+      );
+    }
+
     switch (statusCode) {
       case 400:
         return BadRequestException(
-          message: message,
+          message: message ?? 'Bad request',
           // responseBody: responseBody,
           stackTrace: stackTrace,
           context: context,
         );
       case 401:
         return UnauthorizedException(
-          message: message,
+          message: message ?? 'Unauthorized access',
           stackTrace: stackTrace,
           context: context,
         );
       case 403:
         return ForbiddenException(
-          message: message,
+          message: message ?? 'Access forbidden',
           stackTrace: stackTrace,
           context: context,
         );
       case 404:
         return NotFoundException(
-          message: message,
+          message: message ?? 'Resource not found',
           stackTrace: stackTrace,
           context: context,
         );
       case 408:
         return TimeoutException(
-          message: message,
+          message: message ?? 'Request timeout',
+          stackTrace: stackTrace,
+          context: context,
+        );
+      case 422:
+        return ValidationException(
+          message: message ?? 'Validation failed',
+          stackTrace: stackTrace,
+          context: context,
+        );
+      case 429:
+        return RateLimitException(
+          message: message ?? 'Too many requests',
           stackTrace: stackTrace,
           context: context,
         );
@@ -150,7 +181,7 @@ class ExceptionHandler {
       case 503:
       case 504:
         return ServerException(
-          message: message,
+          message: message ?? 'Server error occurred',
           statusCode: statusCode,
           responseBody: responseBody,
           stackTrace: stackTrace,
@@ -161,6 +192,65 @@ class ExceptionHandler {
           message: message ?? 'HTTP Error: $statusCode',
           statusCode: statusCode,
           responseBody: responseBody,
+          stackTrace: stackTrace,
+          context: context,
+        );
+    }
+  }
+
+  /// Create exception from Dio error with better handling
+  static AppException fromDioError(
+    dynamic error, {
+    StackTrace? stackTrace,
+    Map<String, dynamic>? context,
+  }) {
+    // Handle cases where we have a response
+    if (error.response != null) {
+      final statusCode = error.response?.statusCode;
+      final responseBody = error.response?.data?.toString();
+      
+      if (statusCode != null) {
+        return fromHttpStatusCode(
+          statusCode,
+          message: error.message,
+          responseBody: responseBody,
+          stackTrace: stackTrace,
+          context: {
+            ...?context,
+            'dioErrorType': error.type?.toString(),
+            'requestPath': error.requestOptions?.path,
+            'requestMethod': error.requestOptions?.method,
+          },
+        );
+      }
+    }
+
+    // Handle different Dio error types
+    switch (error.type?.toString()) {
+      case 'DioExceptionType.connectionTimeout':
+      case 'DioExceptionType.sendTimeout':
+      case 'DioExceptionType.receiveTimeout':
+        return TimeoutException(
+          message: error.message ?? 'Request timeout',
+          stackTrace: stackTrace,
+          context: context,
+        );
+      case 'DioExceptionType.connectionError':
+        return NetworkException(
+          message: error.message ?? 'Network connection error',
+          stackTrace: stackTrace,
+          context: context,
+        );
+      case 'DioExceptionType.cancel':
+        return RequestCancelledException(
+          message: error.message ?? 'Request was cancelled',
+          stackTrace: stackTrace,
+          context: context,
+        );
+      default:
+        return UnknownException(
+          message: error.message ?? 'Unknown error occurred',
+          originalException: error,
           stackTrace: stackTrace,
           context: context,
         );

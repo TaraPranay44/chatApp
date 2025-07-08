@@ -11,7 +11,17 @@ class ExceptionConstants {
   static const String forbiddenPrefix = 'Forbidden: ';
   static const String notFoundPrefix = 'Not Found: ';
   static const String requestCancelledPrefix = 'Request Cancelled: ';
-  
+
+  // Default internal message for developers
+  static const String defaultRateLimitError = 'Rate limit exceeded.';
+
+  // Message meant to be displayed to users
+  static const String userFriendlyRateLimitError =
+      'You are making too many requests. Please try again later.';
+
+  // Prefix used for categorizing/logging exceptions
+  static const String rateLimitErrorPrefix = 'RLIMIT';
+
   // Default Messages
   static const String defaultNetworkError = 'No internet connection';
   static const String defaultTimeoutError = 'Connection timeout';
@@ -25,17 +35,24 @@ class ExceptionConstants {
   static const String defaultAuthError = 'Authentication failed';
   static const String defaultValidationError = 'Validation failed';
   static const String defaultUnknownError = 'An unexpected error occurred';
-  
+
   // User-Friendly Messages
-  static const String userFriendlyNetworkError = 'Please check your internet connection and try again';
-  static const String userFriendlyTimeoutError = 'The request took too long. Please try again';
-  static const String userFriendlyServerError = 'Something went wrong on our end. Please try again later';
+  static const String userFriendlyNetworkError =
+      'Please check your internet connection and try again';
+  static const String userFriendlyTimeoutError =
+      'The request took too long. Please try again';
+  static const String userFriendlyServerError =
+      'Something went wrong on our end. Please try again later';
   static const String userFriendlyAuthError = 'Please log in again to continue';
-  static const String userFriendlyUnauthorizedError = 'You don\'t have permission to access this resource';
-  static const String userFriendlyNotFoundError = 'The requested resource was not found';
-  static const String userFriendlyValidationError = 'Please check your input and try again';
-  static const String userFriendlyUnknownError = 'Something went wrong. Please try again';
-  
+  static const String userFriendlyUnauthorizedError =
+      'You don\'t have permission to access this resource';
+  static const String userFriendlyNotFoundError =
+      'The requested resource was not found';
+  static const String userFriendlyValidationError =
+      'Please check your input and try again';
+  static const String userFriendlyUnknownError =
+      'Something went wrong. Please try again';
+
   // Error Codes
   static const int networkErrorCode = 1000;
   static const int timeoutErrorCode = 1001;
@@ -49,4 +66,5 @@ class ExceptionConstants {
   static const int authErrorCode = 1009;
   static const int validationErrorCode = 1010;
   static const int unknownErrorCode = 9999;
+  static const int rateLimitErrorCode = 429;
 }
