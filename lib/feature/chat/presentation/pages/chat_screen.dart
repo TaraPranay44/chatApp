@@ -1,8 +1,12 @@
 // features/chat/presentation/screens/chat_list_screen.dart
-import 'package:chatapp/feature/chat/presentation/pages/individual_chat_screen.dart';
+import 'package:chatapp/feature/auth/presentation/providers/auth_provider.dart';
+import 'package:chatapp/feature/chat/domain/entities/message_entity,dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:chatapp/feature/chat/presentation/providers/chat_provider.dart';
+import 'package:chatapp/feature/chat/domain/entities/chat_entity.dart';
+import 'package:chatapp/core/router/app_router.dart';
 
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
@@ -12,18 +16,27 @@ class ChatListScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    // Load chats when screen is initialized
+    // Initialize with dummy data since chat list API is not ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatProvider.notifier).loadChats();
+      ref.read(chatProvider.notifier).initializeDummyChats();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
+    final filteredChats = ref.watch(filteredChatsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF1C1C1C),
@@ -41,7 +54,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              // TODO: Implement new chat functionality
+              // Navigate to create new chat with dummy user
+              _startNewChat();
             },
           ),
         ],
@@ -56,38 +70,37 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               borderRadius: BorderRadius.circular(25),
             ),
             child: TextField(
+              controller: _searchController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search',
                 hintStyle: TextStyle(color: Colors.grey[400]),
                 prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               ),
               onChanged: (value) {
-                // TODO: Implement search functionality
+                ref.read(chatProvider.notifier).searchChats(value);
               },
             ),
           ),
           // Chat List
           Expanded(
-            child: _buildChatList(chatState),
+            child: _buildChatList(chatState, filteredChats),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to predefined chat with ID 1
-          _navigateToChat(context, 1);
-        },
+        onPressed: _startNewChat,
         backgroundColor: const Color(0xFF00D4AA),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildChatList(ChatState chatState) {
-    if (chatState.isLoading) {
+  Widget _buildChatList(ChatState chatState, List<ChatEntity> filteredChats) {
+    if (chatState.isLoading && !chatState.isRefreshing) {
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00D4AA)),
@@ -95,7 +108,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       );
     }
 
-    if (chatState.error != null) {
+    if (chatState.hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -107,7 +120,12 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.read(chatProvider.notifier).loadChats(),
+              onPressed: () =>
+                  ref.read(chatProvider.notifier).initializeDummyChats(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00D4AA),
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -115,34 +133,87 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       );
     }
 
-    // Since we don't have API for getting all chats, show a mock list with one chat
-    return ListView.builder(
-      itemCount: 1, // Only one chat for now
-      itemBuilder: (context, index) {
-        return _buildChatItem(
-          context,
-          chatId: 1,
-          name: 'User 2',
-          message: 'Tap to start chatting',
-          time: 'Now',
-          isOnline: true,
-        );
-      },
+    if (chatState.isEmpty || filteredChats.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64,
+              color: Colors.grey[600],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              filteredChats.isEmpty && chatState.searchQuery != null
+                  ? 'No chats found for "${chatState.searchQuery}"'
+                  : 'No chats yet',
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Start a conversation by tapping the + button',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(chatProvider.notifier).refreshChats(),
+      backgroundColor: const Color(0xFF2C2C2C),
+      color: const Color(0xFF00D4AA),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: filteredChats.length,
+        itemBuilder: (context, index) {
+          ref.read(authProvider).user?.phone;
+          final chat = filteredChats[index];
+          final currentUserId = ref.read(authProvider).user?.phone ??
+              ''; // Current user's mobile number
+          final otherUser = _getOtherUser(chat, currentUserId);
+          final lastMessage = chat.lastMessage;
+
+          return _buildChatItem(
+            context,
+            chat: chat,
+            otherUser: otherUser,
+            lastMessage: lastMessage,
+          );
+        },
+      ),
     );
   }
 
   Widget _buildChatItem(
     BuildContext context, {
-    required int chatId,
-    required String name,
-    required String message,
-    required String time,
-    required bool isOnline,
+    required ChatEntity chat,
+    required UserEntity otherUser,
+    MessageEntity? lastMessage,
   }) {
+    final timeString =
+        _formatTime(lastMessage?.createdAt ?? chat.updatedAt ?? DateTime.now());
+    final isOnline = otherUser.isActive ?? false;
+
     return InkWell(
-      onTap: () => _navigateToChat(context, chatId),
+      onTap: () => _navigateToChat(context, chat, otherUser),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.grey[800]!,
+              width: 0.5,
+            ),
+          ),
+        ),
         child: Row(
           children: [
             Stack(
@@ -151,7 +222,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                   radius: 24,
                   backgroundColor: const Color(0xFF00D4AA),
                   child: Text(
-                    name[0].toUpperCase(),
+                    otherUser.username.isNotEmpty
+                        ? otherUser.username[0].toUpperCase()
+                        : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -169,7 +242,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                       decoration: BoxDecoration(
                         color: Colors.green,
                         shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF1C1C1C), width: 2),
+                        border: Border.all(
+                            color: const Color(0xFF1C1C1C), width: 2),
                       ),
                     ),
                   ),
@@ -181,7 +255,9 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    otherUser.username.isNotEmpty
+                        ? otherUser.username
+                        : 'Unknown User',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -190,7 +266,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    message,
+                    lastMessage?.content ?? 'No messages yet',
                     style: TextStyle(
                       color: Colors.grey[400],
                       fontSize: 14,
@@ -205,14 +281,22 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  time,
+                  timeString,
                   style: TextStyle(
                     color: Colors.grey[400],
                     fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 4),
-                // You can add unread count here if needed
+                if (lastMessage != null && !lastMessage.isRead)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF00D4AA),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
               ],
             ),
           ],
@@ -221,12 +305,61 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     );
   }
 
-  void _navigateToChat(BuildContext context, int chatId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => IndividualChatScreen(chatId: chatId),
-      ),
+  void _navigateToChat(
+      BuildContext context, ChatEntity chat, UserEntity otherUser) {
+    context.goToChat(
+      chatId: chat.id,
+      chatName: otherUser.username,
+      otherUserId: otherUser.mobile,
     );
+  }
+
+  void _startNewChat() async {
+    // Since chat list API is not ready, we'll create a new dummy chat
+    const dummyUserId = '7780451128'; // Another dummy user
+    const dummyUserName = 'John Doe';
+
+    final chat = await ref.read(chatProvider.notifier).findOrCreateChat(
+          user1Id: '6280790883', // Current user
+          user2Id: dummyUserId,
+        );
+
+    if (chat != null && mounted) {
+      context.goToChat(
+        chatId: chat.id,
+        chatName: dummyUserName,
+        otherUserId: dummyUserId,
+      );
+    }
+  }
+
+  // Helper methods
+  UserEntity _getOtherUser(ChatEntity chat, String currentUserId) {
+    if (chat.user1.mobile == currentUserId) {
+      return chat.user2;
+    } else {
+      return chat.user1;
+    }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      if (difference.inDays == 1) {
+        return 'Yesterday';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}d ago';
+      } else {
+        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      }
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Now';
+    }
   }
 }

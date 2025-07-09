@@ -38,9 +38,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        ApiEndpoints.findOrCreateChat,
-        data: findOrCreateChatRequestToJson(request),
-      );
+          ApiEndpoints.findOrCreateChat,
+          data: findOrCreateChatRequestToJson(request),
+          requiresAuth: true);
 
       final chatResponse = ChatResponse.fromJson(response);
 
@@ -63,12 +63,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }) async {
     try {
       final response = await _apiClient.get<Map<String, dynamic>>(
-        ApiEndpoints.getMessages(chatId),
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
-      );
+          ApiEndpoints.getMessages(chatId),
+          requiresAuth: true
+          // queryParameters: {
+          //   'page': page,
+          //   'limit': limit,
+          // },
+          );
 
       final messageResponse = MessageResponse.fromJson(response);
 
@@ -89,9 +90,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        ApiEndpoints.sendMessage,
-        data: sendMessageRequestToJson(request),
-      );
+          ApiEndpoints.sendMessage,
+          data: sendMessageRequestToJson(request),
+          requiresAuth: true);
 
       final sendMessageResponse = SendMessageResponse.fromJson(response);
 

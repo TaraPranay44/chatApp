@@ -7,7 +7,7 @@ part 'user_model.g.dart';
 @JsonSerializable(fieldRename: FieldRename.snake)
 class UserModel extends Equatable {
   final String id;
-  final String name;
+  final String? name;
   final String email;
   final String? profilePicture;
   final String? phone;
@@ -16,7 +16,7 @@ class UserModel extends Equatable {
 
   const UserModel({
     required this.id,
-    required this.name,
+     this.name,
     required this.email,
     this.profilePicture,
     this.phone,

@@ -163,7 +163,7 @@ class _$VerifyOtpResponseImpl implements _VerifyOtpResponse {
 
   @override
   String toString() {
-    return 'VerifyOtpResponse(accessToken: $accessToken, userCreated: $userCreated, statusCode: $statusCode, message: $message)';
+    return 'VerifyOtpResponse(access_token: $accessToken, userCreated: $userCreated, statusCode: $statusCode, message: $message)';
   }
 
   @override

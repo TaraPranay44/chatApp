@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
   final String id;
-  final String name;
+  final String? name;
   final String email;
   final String? profilePicture;
   final String? phone;
@@ -11,7 +11,7 @@ class UserEntity extends Equatable {
 
   const UserEntity({
     required this.id,
-    required this.name,
+    this.name,
     required this.email,
     this.profilePicture,
     this.phone,
@@ -61,6 +61,6 @@ class UserEntity extends Equatable {
   }
 
   // Method to check if user is empty
-  bool get isEmpty => id.isEmpty && name.isEmpty && email.isEmpty;
+  bool get isEmpty => id.isEmpty  && email.isEmpty;
   bool get isNotEmpty => !isEmpty;
 }

@@ -26,7 +26,6 @@ class AuthRepositoryImpl implements AuthRepository {
         _localDataSource = localDataSource;
   //  _secureStorageService = secureStorageService;
 
-
   @override
   Future<Either<Failure, void>> logout() async {
     try {
@@ -69,6 +68,7 @@ class AuthRepositoryImpl implements AuthRepository {
       tuple.Tuple2<String, bool> result =
           await _remoteDataSource.verifyOtp(request: request);
       _localDataSource.storeToken(result.item1);
+      log("OTP verified successfully for ${request.email!.isNotEmpty ? request.email : request.phone}  from auth repository impl");
       return Right(result.item2); // or result.$2 — both work
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
@@ -84,7 +84,10 @@ class AuthRepositoryImpl implements AuthRepository {
 }
 
 // Dependencies
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final secureStorage = ref.watch(secureStorageProvider);
+  return ApiClient(secureStorageService: secureStorage);
+});
 
 // // Using sharedPreferencesProvider from main.dart
 

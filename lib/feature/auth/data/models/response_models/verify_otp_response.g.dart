@@ -9,7 +9,7 @@ part of 'verify_otp_response.dart';
 _$VerifyOtpResponseImpl _$$VerifyOtpResponseImplFromJson(
         Map<String, dynamic> json) =>
     _$VerifyOtpResponseImpl(
-      accessToken: json['accessToken'] as String?,
+      accessToken: json['access_token'] as String?,
       userCreated: json['userCreated'] as bool?,
       statusCode: (json['statusCode'] as num?)?.toInt(),
       message: json['message'] as String?,
@@ -18,7 +18,7 @@ _$VerifyOtpResponseImpl _$$VerifyOtpResponseImplFromJson(
 Map<String, dynamic> _$$VerifyOtpResponseImplToJson(
         _$VerifyOtpResponseImpl instance) =>
     <String, dynamic>{
-      'accessToken': instance.accessToken,
+      'access_token': instance.accessToken,
       'userCreated': instance.userCreated,
       'statusCode': instance.statusCode,
       'message': instance.message,

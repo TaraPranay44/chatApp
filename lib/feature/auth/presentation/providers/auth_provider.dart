@@ -112,7 +112,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return result.fold(
       (failure) {
         state = state.copyWith(
-            isLoading: false, errorMessage: AppConstants.defaultVerifyOtpError);
+            isLoading: false, errorMessage: AppConstants.defaultVerifyOtpError, verifiedOtp: false, isAuthenticated: false);
         return false;
       },
       (otpVerified) {
@@ -122,6 +122,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           verifiedOtp: otpVerified, // Store the OTP for verification
           errorMessage: null,
           isAuthenticated: true,
+          user: UserEntity(email: email, phone: phone, id: phone),
         );
         return otpVerified;
       },

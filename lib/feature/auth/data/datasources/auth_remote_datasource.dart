@@ -4,6 +4,7 @@ import 'package:chatapp/core/constants/url_constants.dart';
 import 'package:chatapp/core/error/exception_handler.dart';
 import 'package:chatapp/core/error/exceptions.dart';
 import 'package:chatapp/core/network/api_client.dart';
+import 'package:chatapp/core/storage/secure_storage.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/send_otp_request.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:chatapp/feature/auth/data/models/response_models/send_otp_response.dart';
@@ -102,4 +103,7 @@ final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
 });
 
 // ApiClient provider
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final secureStorage = ref.watch(secureStorageProvider);
+  return ApiClient(secureStorageService: secureStorage);
+});

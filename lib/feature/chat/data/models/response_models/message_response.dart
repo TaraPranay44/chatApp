@@ -31,6 +31,7 @@ class Message with _$Message {
         Sender? sender,
         String? content,
         bool? isSent,
+        
         bool? isDelivered,
         bool? isReadByReceiver,
         DateTime? createdAt,
