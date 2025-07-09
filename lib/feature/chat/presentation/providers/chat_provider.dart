@@ -1,5 +1,6 @@
 // features/chat/presentation/providers/chat_provider.dart
 import 'package:chatapp/core/error/failures.dart';
+import 'package:chatapp/core/network/api_client.dart';
 import 'package:chatapp/feature/chat/data/datasource/chat_remote_datasource.dart';
 import 'package:chatapp/feature/chat/data/repository/chat_repository_impl.dart';
 import 'package:chatapp/feature/chat/domain/entities/chat_entity.dart';
@@ -11,12 +12,14 @@ import 'package:chatapp/feature/chat/domain/usecases/get_chat_messages_usecase.d
 import 'package:chatapp/feature/chat/domain/usecases/send_message_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
+
 // Data source provider
 final chatRemoteDataSourceProvider = Provider<ChatRemoteDataSource>((ref) {
   // You need to provide ApiClient here
-  // final apiClient = ref.watch(apiClientProvider);
-  // return ChatRemoteDataSourceImpl(apiClient);
-  throw UnimplementedError('ApiClient provider not implemented');
+  final apiClient = ref.watch(apiClientProvider);
+  return ChatRemoteDataSourceImpl(apiClient);
+  // throw UnimplementedError('ApiClient provider not implemented');
 });
 
 // Repository provider

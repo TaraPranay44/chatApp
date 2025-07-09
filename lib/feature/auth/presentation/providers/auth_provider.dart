@@ -86,7 +86,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     return result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, errorMessage: failure.message);
+        state = state.copyWith(isLoading: false, errorMessage: "OTP not sent");
         return false;
       },
       (otp) {

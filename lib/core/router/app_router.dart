@@ -41,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.homeRoute,
         name: 'home',
-        builder: (context, state) => const ChatScreen(),
+        builder: (context, state) => const ChatListScreen(),
       ),
       GoRoute(
         path: RouteConstants.loginRoute,
