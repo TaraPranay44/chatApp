@@ -7,8 +7,10 @@ import 'package:chatapp/core/network/api_client.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/send_otp_request.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:chatapp/feature/auth/data/models/response_models/send_otp_response.dart';
-import 'package:flutter/foundation.dart';
+import 'package:chatapp/feature/auth/data/models/response_models/verify_otp_response.dart';
+import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tuple/tuple.dart' as tuple;
 
 abstract class AuthRemoteDataSource {
   /// Login a user with email and password
@@ -23,7 +25,8 @@ abstract class AuthRemoteDataSource {
 
   Future<bool> sendOtp({required SendOtpRequest request});
 
-  Future<bool> verifyOtp({required VerifyOtpRequest request});
+  Future<tuple.Tuple2<String, bool>> verifyOtp(
+      {required VerifyOtpRequest request});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -57,65 +60,37 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return false;
     } on AppException catch (e) {
       ExceptionHandler().handleException(e);
-      return false;
-    } catch (e) {
+      rethrow; // 🔁 Rethrow so repository can catch and return Left(Failure)
+    } on Exception catch (e) {
       log("Unexpected error in sendOtp: $e");
-      return false;
+      throw ServerException(message: e.toString()); // 🔁 Throw expected type
     }
   }
 
-//   @override
-// Future<bool> sendOtp({required SendOtpRequest request}) async {
-//   try {
-//     // Make POST request to send OTP endpoint
-//     final response = await _apiClient.post<Map<String, dynamic>>(
-//       ApiEndpoints.sendOtp,
-//       data: request.toJson(),
-//     );
-
-//     // Check if response is successful
-//     if (response != null) {
-//       if (kDebugMode) {
-//         print("OTP sent successfully to ${request.email.isNotEmpty ? request.email : request.phone}");
-//         print("Response: $response");
-//       }
-//       return true;
-//     }
-
-//     return false;
-//   } on AppException catch (e) {
-//     if (kDebugMode) {
-//       print("AppException in sendOtp: ${e.message}");
-//     }
-
-//     // Check if it's actually a success but treated as error
-//     if (e is UnknownException && e.message.contains('Success response')) {
-//       return true;
-//     }
-
-//     ExceptionHandler().handleException(e);
-//     return false;
-//   } catch (e) {
-//     if (kDebugMode) {
-//       print("Unexpected error in sendOtp: $e");
-//     }
-//     return false;
-//   }
-// }
-
   @override
-  Future<bool> verifyOtp({required VerifyOtpRequest request}) async {
+  Future<tuple.Tuple2<String, bool>> verifyOtp(
+      {required VerifyOtpRequest request}) async {
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 2));
+      final response = await _apiClient.post<Map<String, dynamic>>(
+        ApiEndpoints.verifyOtp,
+        data: verifyOtpRequestToJson(request),
+      );
 
-      // Simulate a successful response
-      log("OTP verified successfully for ${request.email!.isNotEmpty ? request.email : request.phone}");
+      final verifyOtpResponse = VerifyOtpResponse.fromJson(response);
 
-      return true;
+      if (verifyOtpResponse.accessToken != null &&
+          verifyOtpResponse.accessToken!.isNotEmpty) {
+        log("OTP verified successfully for ${request.email!.isNotEmpty ? request.email : request.phone}");
+        return tuple.Tuple2(verifyOtpResponse.accessToken ?? '', true);
+      } else {
+        return const tuple.Tuple2('', false);
+      }
     } on AppException catch (e) {
       ExceptionHandler().handleException(e);
-      return false;
+      rethrow; // 🔁 Rethrow so repository can catch and return Left(Failure)
+    } on Exception catch (e) {
+      log("Unexpected error in verifyotp: $e");
+      throw ServerException(message: e.toString()); // 🔁 Throw expected type
     }
   }
 }

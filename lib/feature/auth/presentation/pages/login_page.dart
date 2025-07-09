@@ -1,55 +1,14 @@
+import 'dart:developer';
+
 import 'package:chatapp/core/constants/app_constants.dart';
 import 'package:chatapp/core/constants/color_constants.dart';
 import 'package:chatapp/core/constants/spacing_constants.dart';
 import 'package:chatapp/core/constants/style_constants.dart';
+import 'package:chatapp/feature/auth/presentation/providers/login_ui_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chatapp/core/utils/app_utils/app_utils.dart';
 import 'package:chatapp/feature/auth/presentation/providers/auth_provider.dart';
-import 'package:chatapp/feature/auth/presentation/providers/login_ui_provider.dart';
-
-// Updated State class for login UI state
-class LoginUiState {
-  final bool showOtpField;
-  final bool isOtpSent;
-
-  const LoginUiState({
-    this.showOtpField = false,
-    this.isOtpSent = false,
-  });
-
-  LoginUiState copyWith({
-    bool? showOtpField,
-    bool? isOtpSent,
-  }) {
-    return LoginUiState(
-      showOtpField: showOtpField ?? this.showOtpField,
-      isOtpSent: isOtpSent ?? this.isOtpSent,
-    );
-  }
-}
-
-// Updated Notifier for login UI state
-class LoginUiNotifier extends StateNotifier<LoginUiState> {
-  LoginUiNotifier() : super(const LoginUiState());
-
-  void showOtpField() {
-    state = state.copyWith(
-      showOtpField: true,
-      isOtpSent: true,
-    );
-  }
-
-  void reset() {
-    state = const LoginUiState();
-  }
-}
-
-// Updated Provider for login UI state
-final loginUiProvider =
-    StateNotifierProvider<LoginUiNotifier, LoginUiState>((ref) {
-  return LoginUiNotifier();
-});
 
 // Updated Login Screen
 class LoginScreen extends ConsumerStatefulWidget {
@@ -218,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (success) {
       ref.read(loginUiProvider.notifier).showOtpField();
-      _showSuccessMessage(AppConstants.otpSentToBoth);
+      _showSuccessMessage(AppConstants.otpSentToEmail);
     } else {
       _showErrorMessage(
         ref.read(authProvider).errorMessage ?? AppConstants.defaultSendOtpError,
@@ -234,12 +193,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           enteredOtp: otp,
         );
 
+    log("Login page otp verified: $success");
+
     if (!mounted) return;
 
     if (success) {
       _showSuccessMessage(AppConstants.loginSuccess);
       // Navigation will be handled by the router based on authentication state
     } else {
+      // ref.read(loginUiProvider.notifier).hideOtpField();
       _showErrorMessage(
         ref.read(authProvider).errorMessage ??
             AppConstants.defaultVerifyOtpError,

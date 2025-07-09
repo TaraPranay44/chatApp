@@ -11,11 +11,7 @@ class SendOtpUseCase {
   SendOtpUseCase(this._repository);
 
   Future<Either<Failure, bool>> execute({required SendOtpRequest request}) {
-    // if (emailOrPhone.trim().isEmpty) {
-    //   return Future.value(
-    //     const Left(InputFailure(message: 'Email/Phone cannot be empty')),
-    //   );
-    // }
+
     return _repository.sendOtp(request: request);
   }
 }

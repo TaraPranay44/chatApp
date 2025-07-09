@@ -1,3 +1,6 @@
+import 'dart:developer';
+
+import 'package:chatapp/core/constants/app_constants.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/send_otp_request.dart';
 import 'package:chatapp/feature/auth/data/models/request_models/verify_otp_request.dart';
 import 'package:chatapp/feature/auth/domain/entities/user_entity.dart';
@@ -46,11 +49,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final VerifyOtpUseCase _verifyOtpUseCase;
 
   AuthNotifier(
-      {
-      required SendOtpUseCase sendOtpUseCase,
+      {required SendOtpUseCase sendOtpUseCase,
       required VerifyOtpUseCase verifyOtpUseCase})
-      : 
-        _sendOtpUseCase = sendOtpUseCase,
+      : _sendOtpUseCase = sendOtpUseCase,
         _verifyOtpUseCase = verifyOtpUseCase,
         super(const AuthState());
 
@@ -110,17 +111,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final result = await _verifyOtpUseCase.execute(request: verifyOtpRequest);
     return result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, errorMessage: failure.message);
+        state = state.copyWith(
+            isLoading: false, errorMessage: AppConstants.defaultVerifyOtpError);
         return false;
       },
       (otpVerified) {
+        log("auth provider otp verified: $otpVerified");
         state = state.copyWith(
           isLoading: false,
           verifiedOtp: otpVerified, // Store the OTP for verification
           errorMessage: null,
           isAuthenticated: true,
         );
-        return true;
+        return otpVerified;
       },
     );
   }
@@ -133,16 +136,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 // Auth provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  
   final sendOtpUseCase = ref.watch(sendOtpUseCaseProvider);
   final verifyOtpUseCase = ref.watch(verifOtpUseCaseProvider);
   // final logoutUseCase = ref.watch(logoutUseCaseProvider);
   // final registerUseCase = ref.watch(registerUseCaseProvider);
 
   return AuthNotifier(
-      
-      sendOtpUseCase: sendOtpUseCase,
-      verifyOtpUseCase: verifyOtpUseCase
+      sendOtpUseCase: sendOtpUseCase, verifyOtpUseCase: verifyOtpUseCase
       // logoutUseCase: logoutUseCase,
       // registerUseCase: registerUseCase,
       );

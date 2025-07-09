@@ -4,7 +4,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   
   // Input Validation
-  static const int otpLength = 6;
+  static const int otpLength = 4;
   static const String phoneRegex = r'^[+]?[\d\s-()]{10,}$';
   static const String emailRegex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
   

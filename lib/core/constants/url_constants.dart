@@ -34,15 +34,18 @@ class ApiEndpoints {
   // Chat endpoints
   static const String _chat = '/chat';
   static String get messages => '$_chat/messages';
+  static String get sendMessage => '$_chat/send-message';
+  static String get findOrCreateChat => '$_chat/find-or-create';
   static String get conversations => '$_chat/conversations';
   static String get createConversation => '$_chat/create';
 
   // Utility methods for dynamic endpoints
   static String getUserProfile(String userId) => '$_user/profile/$userId';
+  static String getMessages(int chaId) => '$_chat/$chaId/messages';
   static String getConversation(String conversationId) =>
       '$_chat/conversations/$conversationId';
-  static String getMessages(String conversationId) =>
-      '$_chat/conversations/$conversationId/messages';
+  // static String getMessages(String conversationId) =>
+  //     '$_chat/conversations/$conversationId/messages';
   static String deleteMessage(String messageId) => '$_chat/messages/$messageId';
   static String updateMessage(String messageId) => '$_chat/messages/$messageId';
 

@@ -1,8 +1,7 @@
-
 import 'package:chatapp/core/constants/route_constants.dart';
 import 'package:chatapp/feature/auth/presentation/pages/login_page.dart';
 import 'package:chatapp/feature/auth/presentation/providers/auth_provider.dart';
-import 'package:chatapp/feature/home/presentation/pages/home_screen.dart';
+import 'package:chatapp/feature/chat/presentation/pages/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.homeRoute,
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const ChatScreen(),
       ),
       GoRoute(
         path: RouteConstants.loginRoute,
@@ -52,8 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.initialRoute,
         name: 'initial',
-        redirect: (_, __) =>
-            isAuthenticated ? RouteConstants.homeRoute : RouteConstants.loginRoute,
+        redirect: (_, __) => isAuthenticated
+            ? RouteConstants.homeRoute
+            : RouteConstants.loginRoute,
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

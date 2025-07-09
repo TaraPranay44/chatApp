@@ -11,11 +11,6 @@ class VerifyOtpUseCase {
   VerifyOtpUseCase(this._repository);
 
   Future<Either<Failure, bool>> execute({required VerifyOtpRequest request}) {
-    // if (emailOrPhone.trim().isEmpty) {
-    //   return Future.value(
-    //     const Left(InputFailure(message: 'Email/Phone cannot be empty')),
-    //   );
-    // }
     return _repository.verifyOtp(request: request);
   }
 }

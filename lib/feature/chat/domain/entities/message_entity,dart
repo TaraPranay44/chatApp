@@ -1,0 +1,109 @@
+// features/chat/domain/entities/message_entity.dart
+import 'package:equatable/equatable.dart';
+
+class MessageEntity extends Equatable {
+  final int id;
+  final String content;
+  final String senderId;
+  final String receiverId;
+  final int chatId;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  final bool isRead;
+  final bool isSent;
+  final bool isDelivered;
+  final MessageType type;
+  final bool isSentByMe;
+
+  const MessageEntity({
+    required this.id,
+    required this.content,
+    required this.senderId,
+    required this.receiverId,
+    required this.chatId,
+    required this.createdAt,
+    this.updatedAt,
+    this.isRead = false,
+    this.isSent = false,
+    this.isDelivered = false,
+    this.type = MessageType.text,
+    this.isSentByMe = false,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    content,
+    senderId,
+    receiverId,
+    chatId,
+    createdAt,
+    updatedAt,
+    isRead,
+    isSent,
+    isDelivered,
+    type,
+    isSentByMe,
+  ];
+
+  MessageEntity copyWith({
+    int? id,
+    String? content,
+    String? senderId,
+    String? receiverId,
+    int? chatId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isRead,
+    bool? isSent,
+    bool? isDelivered,
+    MessageType? type,
+    bool? isSentByMe,
+  }) {
+    return MessageEntity(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      senderId: senderId ?? this.senderId,
+      receiverId: receiverId ?? this.receiverId,
+      chatId: chatId ?? this.chatId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isRead: isRead ?? this.isRead,
+      isSent: isSent ?? this.isSent,
+      isDelivered: isDelivered ?? this.isDelivered,
+      type: type ?? this.type,
+      isSentByMe: isSentByMe ?? this.isSentByMe,
+    );
+  }
+
+  // Helper method to get formatted time
+  String get formattedTime {
+    final now = DateTime.now();
+    final difference = now.difference(createdAt);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  String get timeString {
+    final hour = createdAt.hour;
+    final minute = createdAt.minute;
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+  }
+}
+
+enum MessageType {
+  text,
+  image,
+  file,
+  voice,
+}
